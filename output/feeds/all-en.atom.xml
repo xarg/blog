@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Humancoder</title><link href="http://blog.hiresasha.net/" rel="alternate"></link><link href="http://blog.hiresasha.net/feeds/all-en.atom.xml" rel="self"></link><id>http://blog.hiresasha.net/</id><updated>2011-11-24T18:09:00+01:00</updated><entry><title>A zope.component introduction - Part 2</title><link href="http://blog.hiresasha.net/zope-component-introduction-part2.html" rel="alternate"></link><updated>2011-11-24T18:09:00+01:00</updated><author><name>Alex Plugaru</name></author><id>tag:blog.hiresasha.net,2011-11-24:zope-component-introduction-part2.html</id><summary type="html">&lt;p&gt;&lt;address&lt;address&gt;Note: If you are already familiar with the adapter concept and you just want to learn about zope.component you can skip to &lt;a href="http://blog.hiresasha.net/zope-component-introduction-part-2/"&gt;part 2&lt;/a&gt;.&lt;/address&gt;
+nent&lt;/h2&gt;
+&lt;a href="http://pypi.python.org/pypi/zope.component"&gt;zope.component&lt;/a&gt; is a reusable python package that usually comes with zope.interface and zope.event. We can split this package into two categories:
+&lt;ol&gt;
+    &lt;li&gt;Components: adapters, utilities, named adapters, multi-adapters and others&lt;/li&gt;
+    &lt;li&gt;Registries: global component registry, local component registry.&lt;/li&gt;
+&lt;/ol&gt;
+What we need to remember from all this is that there are registries that store adapters. The idea is to use these registries through out our application. Think of it as a global dictionary with values: adapters and keys: interfaces - because it's exactly what it is. Without further ado we'll jump directly to a simple example, but instead of adapters will use an utility (an adapter that adapts nothing).
+&lt;h2&gt;A small utility&lt;/h2&gt;
+[gist id=1391210]&lt;/p&gt;
+&lt;p&gt;Let's see what we did here:
+&lt;ol&gt;
+    &lt;li&gt;We declared an interface and an utility class &lt;em&gt;Hello&lt;/em&gt;.&lt;/li&gt;
+    &lt;li&gt;We got the global registry and registered our utility for the &lt;em&gt;ISpeach&lt;/em&gt; interface.&lt;/li&gt;
+    &lt;li&gt;In the end we used our utility first by querying the register and then just used it as a &lt;em&gt;Hello&lt;/em&gt; object.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2&gt;The benefits&lt;/h2&gt;
+The nice thing about registering a utility like this is that you can change its location in the project, you can refactor it and give it a different name, you can override it with another utility at will - and most importantly is that the &lt;span style="text-decoration: underline;"&gt;last 2 lines never change&lt;/span&gt;! Here is why:
+&lt;div&gt;
+&lt;ul&gt;
+    &lt;li&gt;All we really care about is the interface with which we are making the query - the implementation can change in the future.&lt;/li&gt;
+    &lt;li&gt;The code is decoupled (no direct imports to the implementation) - just the interface is known to us.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+A direct result to this is:  more control for the developer which can replace the implementation at will without worrying that he/she needs to refactor a lot of code. Looks like a lot of code just to register one simple utility isn't it? I couldn't agree more, but remember that we are talking here about big applications with tons of utilities and adapters and events and event handlers. In the end everything is a structured chaos. It's structured because as long as we have a registry that has all the components we have an overview of our application and all its components.
+&lt;blockquote&gt;But my application is already far in it's 3rd year of development. I don't have everything in one big component registry!&lt;/blockquote&gt;
+The good news is that you don't need to have everything as components - I strongly advice against it actually. You can use this just for the parts you feel that your application will benefit the most. You can gradually use it where it makes sense.&lt;/p&gt;
+&lt;p&gt;Now let's return to our apples and oranges example, but make it use adapters.
+&lt;h2&gt;Oranges and Apples - again&lt;/h2&gt;
+[gist id= 1391374]&lt;/p&gt;
+&lt;p&gt;It's really not that different from our previous example with apples and oranges except the whole interfaces and registration stuff. The benefit however is that this is a lot more usable in the long run for the reasons I explained above. And the difference from the utility example is that it actually adapts something - &lt;em&gt;IApple&lt;/em&gt; in our case. The key thing to remember is that all the registry queries are done using interfaces.&lt;/p&gt;
+&lt;p&gt;In the next part I will try to draw the big picture, what else can components do besides adapters and utilities and what I personally don't like about their implementation - discussing possible alternatives.
+&lt;h2&gt;The problem&lt;/h2&gt;
+Recently I gave a &lt;a title="Zope Components - an introduction" href="http://hiresasha.net/slides/zca/introduction/"&gt;talk&lt;/a&gt; about &lt;a href="http://www.muthukadan.net/docs/zca.html"&gt;zope component architecture&lt;/a&gt; at a company in Paris where I started consulting on zope, plone, django and python in general. In these posts, aided by code examples, I will try to show what  zope components are capable of, what are the common use-cases and some of my personal views about the subject.&lt;/p&gt;
+&lt;p&gt;First lets &lt;span style="text-decoration: underline;"&gt;identify the problem&lt;/span&gt; that we are trying to solve using a component architecture:
+&lt;blockquote&gt;Applications tend to get big. Especially those applications that have a lot of users and have years of development. Users want different features/changes in different stages of the development of the product. Hence the key to a successful and long lasting application is to comply with the user needs as fast as possible with as little technical dept as possible. Finding a balance between the two is not easy.&lt;/blockquote&gt;
+Speed of development is important especially in the beginning of a project. Your clients want that software today and you can't waste time on thinking a lot about long term benefits if your bank account is empty. Those benefits are innexistent if you don't finish in time so the shortest path usually gives you the best chances of success. This is the correct way to think about it. However when the project is getting bigger you may want to start thinking in different terms. Questions like these are usually good onces to ask:
+&lt;ul&gt;
+    &lt;li&gt;How much time does it take to create a feature?&lt;/li&gt;
+    &lt;li&gt;Refactoring is hard, but can it be made faster?&lt;/li&gt;
+    &lt;li&gt;Is it easy to extend existing features?&lt;/li&gt;
+    &lt;li&gt;How different parts of your application talk to each other?&lt;/li&gt;
+    &lt;li&gt;How about debugging?&lt;/li&gt;
+&lt;/ul&gt;
+These questions matter both to managers and coders. Even if the managers and developer are very good at what they do usually what happens is that layer after layer gets added on top of the existing product until it becomes a big pile of crap - new developers are screwed because they can't figure out what is happening in the system and the time to train them is very expensive. New features take enormous amounts of time to develop and your technical dept gets bigger and bigger with every new modification.&lt;/p&gt;
+&lt;p&gt;Very little can be done about this once you're big. There are no easy solutions and old applications sometimes just whither and die. Tough. But maybe components can help.
+&lt;h2&gt;Prelude&lt;/h2&gt;
+Python is a great language. It is easy to learn and there are many different frameworks that can get you started really fast. What I found very important about python is that it's a good prototyping language - some complain that it's too good. It's no accident that it's the language of choice for many successful startups (Dropbox, Disqus, Quora, etc.).&lt;/p&gt;
+&lt;p&gt;So once you start delivering and get some sort of income you try to improve the product to make your users happy. You provide missing features, improve stuff. More code, more complexity, more tests, more features, more developers and so on and we get back to our problem.&lt;/p&gt;
+&lt;p&gt;Zope components architecture promises to alleviate some of the problems of big applications by using adapters as a way to organize code. If this is true for your case you will have to decide for yourself.&lt;/p&gt;
+&lt;p&gt;What's an adapter?
+&lt;blockquote&gt;&lt;a href="http://en.wikipedia.org/wiki/Adapter_pattern"&gt;Wikipedia&lt;/a&gt;:&lt;/p&gt;
+&lt;p&gt;In &lt;a title="Computer programming" href="http://en.wikipedia.org/wiki/Computer_programming"&gt;computer programming&lt;/a&gt;, the &lt;strong&gt;adapter pattern&lt;/strong&gt; (often referred to as the &lt;strong&gt;wrapper pattern&lt;/strong&gt; or simply a &lt;strong&gt;wrapper&lt;/strong&gt;) is a &lt;a title="Design pattern (computer science)" href="http://en.wikipedia.org/wiki/Design_pattern_(computer_science)"&gt;design pattern&lt;/a&gt; that translates one &lt;a title="Interface (computer science)" href="http://en.wikipedia.org/wiki/Interface_(computer_science)"&gt;interface&lt;/a&gt; for a &lt;a title="Class (computer science)" href="http://en.wikipedia.org/wiki/Class_(computer_science)"&gt;class&lt;/a&gt; into a compatible interface. An &lt;em&gt;adapter&lt;/em&gt; allows classes to work together that normally could not because of incompatible interfaces, by providing its interface to clients while using the original interface.&lt;/blockquote&gt;
+In other words, an adapter (usually a function or a class) allows two interfaces to talk to each other. Consider this example:
+&lt;blockquote&gt;Say we have interfaces iA and iB, receptively  A and B their implementations. At the beginning they don't know about each other. But then you decide that you want to make them talk to each other. Let's say A wants to list all Bs. At the same time you don't want to change A or B because they are central to your application and a lot of stuff uses both A and B and changing them can be both ugly and difficult. This sucks!&lt;/blockquote&gt;
+The good news is that in some cases this can be avoided by using a third party that acts as a intermediary (the adapter) between iA and iB and provides functionality that did not exist before. Not only that, but it allows you to keep your A and B &lt;span style="text-decoration: underline;"&gt;unchanged&lt;/span&gt;.&lt;/p&gt;
+&lt;p&gt;Let's forget about interfaces and adapters for a while and let's consider this simple scenario of apples and oranges in a basket:&lt;/p&gt;
+&lt;p&gt;[gist id=1388813]&lt;/p&gt;
+&lt;p&gt;It's pretty clear that &lt;strong&gt;&lt;em&gt;Apple&lt;/em&gt;&lt;/strong&gt; doesn't have slices and the last line will fail with an &lt;em&gt;&lt;strong&gt;AttributeError. &lt;/strong&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;So how do we make apple have slices? There are many possible solutions. But let's impose these 2 restrictions (I will explain why later):
+&lt;ol&gt;
+    &lt;li&gt;We are not allowed to &lt;span style="text-decoration: underline;"&gt;modify&lt;/span&gt; the &lt;em&gt;Apple&lt;/em&gt; class&lt;/li&gt;
+    &lt;li&gt;We are not allowed to &lt;span style="text-decoration: underline;"&gt;subclass&lt;/span&gt; the &lt;em&gt;Apple&lt;/em&gt; class.&lt;/li&gt;
+&lt;/ol&gt;
+A possible solution is to create a wrapper class around the Apple class that will give us the functionality we need.&lt;/p&gt;
+&lt;p&gt;[gist id=1388877]&lt;/p&gt;
+&lt;p&gt;So let's see what we did here.
+&lt;ol&gt;
+    &lt;li&gt;We had an &lt;em&gt;Apple&lt;/em&gt; class which didn't have any slices&lt;/li&gt;
+    &lt;li&gt;We created an &lt;em&gt;AppleWrapper&lt;/em&gt; which takes an &lt;em&gt;Apple&lt;/em&gt; object and provides a &lt;em&gt;slices&lt;/em&gt; function which can be used later with that apple object.&lt;/li&gt;
+    &lt;li&gt;As far as &lt;em&gt;get_slices&lt;/em&gt; is concerned it just needs to call a function called &lt;em&gt;slices&lt;/em&gt; on basket's items.&lt;/li&gt;
+    &lt;li&gt;We also didn't subclass the &lt;em&gt;Apple&lt;/em&gt; class and most importantly &lt;em&gt;Apple&lt;/em&gt; class remains untouched.&lt;/li&gt;
+    &lt;li&gt;&lt;em&gt;AppleWrapper&lt;/em&gt; is what we call an adapter and the apple object is the &lt;strong&gt;adaptee&lt;/strong&gt;.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;em&gt;Why it is so important not to subclass?&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;For a longer explanation of why subclassing is considered harmful search for &lt;a href="http://google.com?q=inheritance is evil"&gt;"inheritance is evil"&lt;/a&gt;. The short explanation is that we don't really need to inherit all Apple's properties and methods - we just need to make it have slices and that's it.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Why just not modify the Apple class to give it slices?&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Because we don't really need the Apple to have slices all the time. Just the time when it's in a basket. This way the &lt;em&gt;Apple&lt;/em&gt; class will stay a clean and simple - and as a result easily extendable in the future.&lt;/p&gt;
+&lt;p&gt;Ok. Now that we understood how an adapter works we can switch to a more complicated example and this time we are going to use zope components.
+&lt;h4&gt;Go to &lt;a href="http://blog.hiresasha.net/zope-component-introduction-part-2/"&gt;part 2&lt;/a&gt; in which I will explain how to use zope.component.&lt;/h4&gt; &amp;gt;Note: If you are already familiar with the adapter concept and you just want to learn about zope.component you can skip to &lt;a href="http://blog.hiresasha.net/zope-component-introduction-part-2/"&gt;part 2&lt;/a&gt;.&lt;/address&gt;
+&lt;h2&gt;The problem&lt;/h2&gt;
+Recently I gave a &lt;a title="Zope Components - an introduction" href="http://hiresasha.net/slides/zca/introduction/"&gt;talk&lt;/a&gt; about &lt;a href="http://www.muthukadan.net/docs/zca.html"&gt;zope component architecture&lt;/a&gt; at a company in Paris where I started consulting on zope, plone, django and python in general. In these posts, aided by code examples, I will try to show what  zope components are capable of, what are the common use-cases and some of my personal views about the subject.&lt;/p&gt;
+&lt;p&gt;First lets &lt;span style="text-decoration: underline;"&gt;identify the problem&lt;/span&gt; that we are trying to solve using a component architecture:
+&lt;blockquote&gt;Applications tend to get big. Especially those applications that have a lot of users and have years of development. Users want different features/changes in different stages of the development of the product. Hence the key to a successful and long lasting application is to comply with the user needs as fast as possible with as little technical dept as possible. Finding a balance between the two is not easy.&lt;/blockquote&gt;
+Speed of development is important especially in the beginning of a project. Your clients want that software today and you can't waste time on thinking a lot about long term benefits if your bank account is empty. Those benefits are innexistent if you don't finish in time so the shortest path usually gives you the best chances of success. This is the correct way to think about it. However when the project is getting bigger you may want to start thinking in different terms. Questions like these are usually good onces to ask:
+&lt;ul&gt;
+    &lt;li&gt;How much time does it take to create a feature?&lt;/li&gt;
+    &lt;li&gt;Refactoring is hard, but can it be made faster?&lt;/li&gt;
+    &lt;li&gt;Is it easy to extend existing features?&lt;/li&gt;
+    &lt;li&gt;How different parts of your application talk to each other?&lt;/li&gt;
+    &lt;li&gt;How about debugging?&lt;/li&gt;
+&lt;/ul&gt;
+These questions matter both to managers and coders. Even if the managers and developer are very good at what they do usually what happens is that layer after layer gets added on top of the existing product until it becomes a big pile of crap - new developers are screwed because they can't figure out what is happening in the system and the time to train them is very expensive. New features take enormous amounts of time to develop and your technical dept gets bigger and bigger with every new modification.&lt;/p&gt;
+&lt;p&gt;Very little can be done about this once you're big. There are no easy solutions and old applications sometimes just whither and die. Tough. But maybe components can help.
+&lt;h2&gt;Prelude&lt;/h2&gt;
+Python is a great language. It is easy to learn and there are many different frameworks that can get you started really fast. What I found very important about python is that it's a good prototyping language - some complain that it's too good. It's no accident that it's the language of choice for many successful startups (Dropbox, Disqus, Quora, etc.).&lt;/p&gt;
+&lt;p&gt;So once you start delivering and get some sort of income you try to improve the product to make your users happy. You provide missing features, improve stuff. More code, more complexity, more tests, more features, more developers and so on and we get back to our problem.&lt;/p&gt;
+&lt;p&gt;Zope components architecture promises to alleviate some of the problems of big applications by using adapters as a way to organize code. If this is true for your case you will have to decide for yourself.&lt;/p&gt;
+&lt;p&gt;What's an adapter?
+&lt;blockquote&gt;&lt;a href="http://en.wikipedia.org/wiki/Adapter_pattern"&gt;Wikipedia&lt;/a&gt;:&lt;/p&gt;
+&lt;p&gt;In &lt;a title="Computer programming" href="http://en.wikipedia.org/wiki/Computer_programming"&gt;computer programming&lt;/a&gt;, the &lt;strong&gt;adapter pattern&lt;/strong&gt; (often referred to as the &lt;strong&gt;wrapper pattern&lt;/strong&gt; or simply a &lt;strong&gt;wrapper&lt;/strong&gt;) is a &lt;a title="Design pattern (computer science)" href="http://en.wikipedia.org/wiki/Design_pattern_(computer_science)"&gt;design pattern&lt;/a&gt; that translates one &lt;a title="Interface (computer science)" href="http://en.wikipedia.org/wiki/Interface_(computer_science)"&gt;interface&lt;/a&gt; for a &lt;a title="Class (computer science)" href="http://en.wikipedia.org/wiki/Class_(computer_science)"&gt;class&lt;/a&gt; into a compatible interface. An &lt;em&gt;adapter&lt;/em&gt; allows classes to work together that normally could not because of incompatible interfaces, by providing its interface to clients while using the original interface.&lt;/blockquote&gt;
+In other words, an adapter (usually a function or a class) allows two interfaces to talk to each other. Consider this example:
+&lt;blockquote&gt;Say we have interfaces iA and iB, receptively  A and B their implementations. At the beginning they don't know about each other. But then you decide that you want to make them talk to each other. Let's say A wants to list all Bs. At the same time you don't want to change A or B because they are central to your application and a lot of stuff uses both A and B and changing them can be both ugly and difficult. This sucks!&lt;/blockquote&gt;
+The good news is that in some cases this can be avoided by using a third party that acts as a intermediary (the adapter) between iA and iB and provides functionality that did not exist before. Not only that, but it allows you to keep your A and B &lt;span style="text-decoration: underline;"&gt;unchanged&lt;/span&gt;.&lt;/p&gt;
+&lt;p&gt;Let's forget about interfaces and adapters for a while and let's consider this simple scenario of apples and oranges in a basket:&lt;/p&gt;
+&lt;p&gt;[gist id=1388813]&lt;/p&gt;
+&lt;p&gt;It's pretty clear that &lt;strong&gt;&lt;em&gt;Apple&lt;/em&gt;&lt;/strong&gt; doesn't have slices and the last line will fail with an &lt;em&gt;&lt;strong&gt;AttributeError. &lt;/strong&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;So how do we make apple have slices? There are many possible solutions. But let's impose these 2 restrictions (I will explain why later):
+&lt;ol&gt;
+    &lt;li&gt;We are not allowed to &lt;span style="text-decoration: underline;"&gt;modify&lt;/span&gt; the &lt;em&gt;Apple&lt;/em&gt; class&lt;/li&gt;
+    &lt;li&gt;We are not allowed to &lt;span style="text-decoration: underline;"&gt;subclass&lt;/span&gt; the &lt;em&gt;Apple&lt;/em&gt; class.&lt;/li&gt;
+&lt;/ol&gt;
+A possible solution is to create a wrapper class around the Apple class that will give us the functionality we need.&lt;/p&gt;
+&lt;p&gt;[gist id=1388877]&lt;/p&gt;
+&lt;p&gt;So let's see what we did here.
+&lt;ol&gt;
+    &lt;li&gt;We had an &lt;em&gt;Apple&lt;/em&gt; class which didn't have any slices&lt;/li&gt;
+    &lt;li&gt;We created an &lt;em&gt;AppleWrapper&lt;/em&gt; which takes an &lt;em&gt;Apple&lt;/em&gt; object and provides a &lt;em&gt;slices&lt;/em&gt; function which can be used later with that apple object.&lt;/li&gt;
+    &lt;li&gt;As far as &lt;em&gt;get_slices&lt;/em&gt; is concerned it just needs to call a function called &lt;em&gt;slices&lt;/em&gt; on basket's items.&lt;/li&gt;
+    &lt;li&gt;We also didn't subclass the &lt;em&gt;Apple&lt;/em&gt; class and most importantly &lt;em&gt;Apple&lt;/em&gt; class remains untouched.&lt;/li&gt;
+    &lt;li&gt;&lt;em&gt;AppleWrapper&lt;/em&gt; is what we call an adapter and the apple object is the &lt;strong&gt;adaptee&lt;/strong&gt;.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;em&gt;Why it is so important not to subclass?&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;For a longer explanation of why subclassing is considered harmful search for &lt;a href="http://google.com?q=inheritance is evil"&gt;"inheritance is evil"&lt;/a&gt;. The short explanation is that we don't really need to inherit all Apple's properties and methods - we just need to make it have slices and that's it.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Why just not modify the Apple class to give it slices?&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Because we don't really need the Apple to have slices all the time. Just the time when it's in a basket. This way the &lt;em&gt;Apple&lt;/em&gt; class will stay a clean and simple - and as a result easily extendable in the future.&lt;/p&gt;
+&lt;p&gt;Ok. Now that we understood how an adapter works we can switch to a more complicated example and this time we are going to use zope components.
+&lt;h4&gt;Go to &lt;a href="http://blog.hiresasha.net/zope-component-introduction-part-2/"&gt;part 2&lt;/a&gt; in which I will explain how to use zope.component.&lt;/h4&gt; &lt;/p&gt;</summary><category term="python"></category><category term="zope"></category><category term="components"></category><category term="components architecture"></category></entry><entry><title>A zope.component introduction - Part 1</title><link href="http://blog.hiresasha.net/zope-component-introduction-part1.html" rel="alternate"></link><updated>2011-11-23T18:09:00+01:00</updated><author><name>Alex Plugaru</name></author><id>tag:blog.hiresasha.net,2011-11-23:zope-component-introduction-part1.html</id><summary type="html">&lt;p&gt;&lt;address&gt;Note: If you are already familiar with the adapter concept and you just want to learn about zope.component you can skip to &lt;a href="http://blog.hiresasha.net/zope-component-introduction-part-2/"&gt;part 2&lt;/a&gt;.&lt;/address&gt;
+&lt;h2&gt;The problem&lt;/h2&gt;
+Recently I gave a &lt;a title="Zope Components - an introduction" href="http://hiresasha.net/slides/zca/introduction/"&gt;talk&lt;/a&gt; about &lt;a href="http://www.muthukadan.net/docs/zca.html"&gt;zope component architecture&lt;/a&gt; at a company in Paris where I started consulting on zope, plone, django and python in general. In these posts, aided by code examples, I will try to show what  zope components are capable of, what are the common use-cases and some of my personal views about the subject.&lt;/p&gt;
+&lt;p&gt;First lets &lt;span style="text-decoration: underline;"&gt;identify the problem&lt;/span&gt; that we are trying to solve using a component architecture:
+&lt;blockquote&gt;Applications tend to get big. Especially those applications that have a lot of users and have years of development. Users want different features/changes in different stages of the development of the product. Hence the key to a successful and long lasting application is to comply with the user needs as fast as possible with as little technical dept as possible. Finding a balance between the two is not easy.&lt;/blockquote&gt;
+Speed of development is important especially in the beginning of a project. Your clients want that software today and you can't waste time on thinking a lot about long term benefits if your bank account is empty. Those benefits are innexistent if you don't finish in time so the shortest path usually gives you the best chances of success. This is the correct way to think about it. However when the project is getting bigger you may want to start thinking in different terms. Questions like these are usually good onces to ask:
+&lt;ul&gt;
+    &lt;li&gt;How much time does it take to create a feature?&lt;/li&gt;
+    &lt;li&gt;Refactoring is hard, but can it be made faster?&lt;/li&gt;
+    &lt;li&gt;Is it easy to extend existing features?&lt;/li&gt;
+    &lt;li&gt;How different parts of your application talk to each other?&lt;/li&gt;
+    &lt;li&gt;How about debugging?&lt;/li&gt;
+&lt;/ul&gt;
+These questions matter both to managers and coders. Even if the managers and developer are very good at what they do usually what happens is that layer after layer gets added on top of the existing product until it becomes a big pile of crap - new developers are screwed because they can't figure out what is happening in the system and the time to train them is very expensive. New features take enormous amounts of time to develop and your technical dept gets bigger and bigger with every new modification.&lt;/p&gt;
+&lt;p&gt;Very little can be done about this once you're big. There are no easy solutions and old applications sometimes just whither and die. Tough. But maybe components can help.
+&lt;h2&gt;Prelude&lt;/h2&gt;
+Python is a great language. It is easy to learn and there are many different frameworks that can get you started really fast. What I found very important about python is that it's a good prototyping language - some complain that it's too good. It's no accident that it's the language of choice for many successful startups (Dropbox, Disqus, Quora, etc.).&lt;/p&gt;
+&lt;p&gt;So once you start delivering and get some sort of income you try to improve the product to make your users happy. You provide missing features, improve stuff. More code, more complexity, more tests, more features, more developers and so on and we get back to our problem.&lt;/p&gt;
+&lt;p&gt;Zope components architecture promises to alleviate some of the problems of big applications by using adapters as a way to organize code. If this is true for your case you will have to decide for yourself.&lt;/p&gt;
+&lt;p&gt;What's an adapter?
+&lt;blockquote&gt;&lt;a href="http://en.wikipedia.org/wiki/Adapter_pattern"&gt;Wikipedia&lt;/a&gt;:&lt;/p&gt;
+&lt;p&gt;In &lt;a title="Computer programming" href="http://en.wikipedia.org/wiki/Computer_programming"&gt;computer programming&lt;/a&gt;, the &lt;strong&gt;adapter pattern&lt;/strong&gt; (often referred to as the &lt;strong&gt;wrapper pattern&lt;/strong&gt; or simply a &lt;strong&gt;wrapper&lt;/strong&gt;) is a &lt;a title="Design pattern (computer science)" href="http://en.wikipedia.org/wiki/Design_pattern_(computer_science)"&gt;design pattern&lt;/a&gt; that translates one &lt;a title="Interface (computer science)" href="http://en.wikipedia.org/wiki/Interface_(computer_science)"&gt;interface&lt;/a&gt; for a &lt;a title="Class (computer science)" href="http://en.wikipedia.org/wiki/Class_(computer_science)"&gt;class&lt;/a&gt; into a compatible interface. An &lt;em&gt;adapter&lt;/em&gt; allows classes to work together that normally could not because of incompatible interfaces, by providing its interface to clients while using the original interface.&lt;/blockquote&gt;
+In other words, an adapter (usually a function or a class) allows two interfaces to talk to each other. Consider this example:
+&lt;blockquote&gt;Say we have interfaces iA and iB, receptively  A and B their implementations. At the beginning they don't know about each other. But then you decide that you want to make them talk to each other. Let's say A wants to list all Bs. At the same time you don't want to change A or B because they are central to your application and a lot of stuff uses both A and B and changing them can be both ugly and difficult. This sucks!&lt;/blockquote&gt;
+The good news is that in some cases this can be avoided by using a third party that acts as a intermediary (the adapter) between iA and iB and provides functionality that did not exist before. Not only that, but it allows you to keep your A and B &lt;span style="text-decoration: underline;"&gt;unchanged&lt;/span&gt;.&lt;/p&gt;
+&lt;p&gt;Let's forget about interfaces and adapters for a while and let's consider this simple scenario of apples and oranges in a basket:&lt;/p&gt;
+&lt;p&gt;[gist id=1388813]&lt;/p&gt;
+&lt;p&gt;It's pretty clear that &lt;strong&gt;&lt;em&gt;Apple&lt;/em&gt;&lt;/strong&gt; doesn't have slices and the last line will fail with an &lt;em&gt;&lt;strong&gt;AttributeError. &lt;/strong&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;So how do we make apple have slices? There are many possible solutions. But let's impose these 2 restrictions (I will explain why later):
+&lt;ol&gt;
+    &lt;li&gt;We are not allowed to &lt;span style="text-decoration: underline;"&gt;modify&lt;/span&gt; the &lt;em&gt;Apple&lt;/em&gt; class&lt;/li&gt;
+    &lt;li&gt;We are not allowed to &lt;span style="text-decoration: underline;"&gt;subclass&lt;/span&gt; the &lt;em&gt;Apple&lt;/em&gt; class.&lt;/li&gt;
+&lt;/ol&gt;
+A possible solution is to create a wrapper class around the Apple class that will give us the functionality we need.&lt;/p&gt;
+&lt;p&gt;[gist id=1388877]&lt;/p&gt;
+&lt;p&gt;So let's see what we did here.
+&lt;ol&gt;
+    &lt;li&gt;We had an &lt;em&gt;Apple&lt;/em&gt; class which didn't have any slices&lt;/li&gt;
+    &lt;li&gt;We created an &lt;em&gt;AppleWrapper&lt;/em&gt; which takes an &lt;em&gt;Apple&lt;/em&gt; object and provides a &lt;em&gt;slices&lt;/em&gt; function which can be used later with that apple object.&lt;/li&gt;
+    &lt;li&gt;As far as &lt;em&gt;get_slices&lt;/em&gt; is concerned it just needs to call a function called &lt;em&gt;slices&lt;/em&gt; on basket's items.&lt;/li&gt;
+    &lt;li&gt;We also didn't subclass the &lt;em&gt;Apple&lt;/em&gt; class and most importantly &lt;em&gt;Apple&lt;/em&gt; class remains untouched.&lt;/li&gt;
+    &lt;li&gt;&lt;em&gt;AppleWrapper&lt;/em&gt; is what we call an adapter and the apple object is the &lt;strong&gt;adaptee&lt;/strong&gt;.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;em&gt;Why it is so important not to subclass?&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;For a longer explanation of why subclassing is considered harmful search for &lt;a href="http://google.com?q=inheritance is evil"&gt;"inheritance is evil"&lt;/a&gt;. The short explanation is that we don't really need to inherit all Apple's properties and methods - we just need to make it have slices and that's it.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Why just not modify the Apple class to give it slices?&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Because we don't really need the Apple to have slices all the time. Just the time when it's in a basket. This way the &lt;em&gt;Apple&lt;/em&gt; class will stay a clean and simple - and as a result easily extendable in the future.&lt;/p&gt;
+&lt;p&gt;Ok. Now that we understood how an adapter works we can switch to a more complicated example and this time we are going to use zope components.
+&lt;h4&gt;Go to &lt;a href="http://blog.hiresasha.net/zope-component-introduction-part-2/"&gt;part 2&lt;/a&gt; in which I will explain how to use zope.component.&lt;/h4&gt;&lt;/p&gt;</summary><category term="python"></category><category term="zope"></category><category term="components"></category><category term="components architecture"></category></entry><entry><title>Go pathfinding</title><link href="http://blog.hiresasha.net/go-pathfinding.html" rel="alternate"></link><updated>2011-08-05T18:09:00+02:00</updated><author><name>Alex Plugaru</name></author><id>tag:blog.hiresasha.net,2011-08-05:go-pathfinding.html</id><summary type="html">&lt;h3&gt;Remember:&lt;/h3&gt;
+
+&lt;p&gt;I found out why it's a good idea to implement common algorithms in a language you wish to learn.&lt;/p&gt;
+&lt;p&gt;First because you don't use advanced language features. &lt;strong&gt;Simple constructs should be sufficient to implement an efficient common algorithm&lt;/strong&gt;. You don't have to memorize a lot of new concepts which can be confusing and can throw you off your path. Sometimes even quit learning that language! You become more accustomed with low level stuff before getting into complicated standard library features.&lt;/p&gt;
+&lt;p&gt;Second advantage is that you immediately start doing something practical. I mean who doesn't need A&lt;em&gt; or Dijkstra? Everybody?!
+&lt;h3&gt;Practical:&lt;/h3&gt;
+So I needed a good path-finding algorithm such as &lt;a href="http://en.wikipedia.org/wiki/A*_search_algorithm"&gt;A&lt;/em&gt;&lt;/a&gt;. I wanted it to be implemented in golang. I wasn't  able to find any standalone implementation of pathfinding algorithms in golang. Naturally I implemented one. So here it is:&lt;/p&gt;
+&lt;p&gt;&lt;a href="https://github.com/humanfromearth/gopathfinding"&gt;https://github.com/humanfromearth/gopathfinding&lt;/a&gt;
+&lt;h3&gt;Lessons learned:&lt;/h3&gt;
+&lt;ul&gt;
+    &lt;li&gt;I found that if you can use slices instead of maps you should always use slices.&lt;/li&gt;
+    &lt;li&gt;I found that you don't need to use make all the time. You can use append which does the allocation for you.&lt;/li&gt;
+    &lt;li&gt;I found that pointers can be really cool.&lt;/li&gt;
+    &lt;li&gt;I found that again golang is a robust language and gives great hints when hitting an error.&lt;/li&gt;
+    &lt;li&gt;Did I say I love the test framework?&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Update:&lt;/h3&gt;
+&lt;div&gt;This is the answer to &lt;strong&gt;Patrick's &lt;/strong&gt;comment:&lt;/div&gt;
+&lt;div&gt;&lt;em&gt;Why should I use slices instead of maps when possible and why append is sometimes better than make?&lt;/em&gt;&lt;/div&gt;
+&lt;div&gt;First of all you can't use the built-in append function on maps - just slices. So adding new values to maps or extending maps are not as easy as for slices. 'append' is very powerful. Here is why:&lt;/div&gt;
+&lt;div&gt;[gist id=42cf9365cb8f06266fb9]&lt;/div&gt;
+&lt;div&gt;Maybe the above it's not the best example, but you can see that we need to specify a length to the make function to allocate and initialize s11.  Comparing that to append: you don't need to know the exact size of your slice to append stuff. This is better for a because  you don't have to deal with indexes and can make your code a little bit cleaner. Also append does the allocation on runtime.  Doing lots of allocation calls is not very efficient - keep that in mind.&lt;/div&gt;
+&lt;div&gt;Because slices have append to support them it makes them more powerful than maps in some scenarios. My conclusion again: use slices instead of maps if you don't really need maps - it's easier.&lt;/div&gt;&lt;/p&gt;</summary><category term="golang"></category><category term="pathfinding"></category><category term="a-star"></category></entry><entry><title>Make your own Wikipedia dictionaries for Kindle</title><link href="http://blog.hiresasha.net/wikipedia-dictionaries-on-kindle.html" rel="alternate"></link><updated>2011-08-04T18:20:00+02:00</updated><author><name>Alex Plugaru</name></author><id>tag:blog.hiresasha.net,2011-08-04:wikipedia-dictionaries-on-kindle.html</id><summary type="html">&lt;p&gt;One day I was siting on my balcony, reading an article I downloaded on my kindle using &lt;a href="http://www.instapaper.com/"&gt;instapaper&lt;/a&gt; and stumbled upon this term: &lt;a href="http://en.wikipedia.org/wiki/Stone_Wales_defect"&gt;Stone-Wales defect&lt;/a&gt;. I had no idea what this defect was since I'm don't know much about carbon nanotubes. Then I realized that I needed to leave my tea and the conform I got used to and get up and go to my computer to lookup what this term was all about.&lt;/p&gt;
+&lt;p&gt;I'm lazy. I didn't want to get up and search the term on my desktop so I opened up that terrible kindle browser and tried to search that term on Wikipedia which was really slow and uncomfortable and the wireless was down - you got my point. So it struck me that I could probably create some python script to generate a kindle dictionary. So I did.&lt;/p&gt;
+&lt;p&gt;This article will be about how I accomplished this. Also hopefully it will give you an insight on how to tune this tool to make your own kindle dictionaries.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; If you're not interested in the implementation details and just want to generate a dictionary for kindle you can just get the source: &lt;a href="https://github.com/humanfromearth/wikimobi"&gt;https://github.com/humanfromearth/wikimobi&lt;/a&gt; and use it. (usage details in README).
+&lt;h3&gt;Wikipedia is big&lt;/h3&gt;
+It's so big that all the abstracts of all the articles from wikipedia would be a &lt;strong&gt;3GB&lt;/strong&gt; mobi file. 3GB is also the storage size on a Kindle 3. That's no good. So I needed a way to filter out  the articles I don't need. I needed physics mostly. I wanted to create a physics dictionary! Eureka! So all I needed to do was to query the physics related articles and get their articles.&lt;/p&gt;
+&lt;p&gt;At first I tried to use the sql dumps from &lt;a href="http://en.wikipedia.org/wiki/Wikipedia:Database_download" target="_blank"&gt;http://en.wikipedia.org/wiki/Wikipedia:Database_download&lt;/a&gt; but that failed because sql was really slow to load into a mysql database. Fortunately I found an alternative: &lt;a href="http://downloads.dbpedia.org/"&gt;http://downloads.dbpedia.org&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;These guys had archives of wikipedia in a &lt;a href="http://en.wikipedia.org/wiki/N-Triples"&gt;N-Triples&lt;/a&gt; format which is more convening to use and a lot faster that sql (at least in my case).&lt;/p&gt;
+&lt;p&gt;Cool. So I needed a few archives.&lt;/p&gt;
+&lt;p&gt;This one contains english abstracts:
+&lt;pre class="code"&gt;http://downloads.dbpedia.org/3.6/en/short_abstracts_en.nt.bz2 (300mb)&lt;/pre&gt;
+&lt;span&gt;This one contains the article -&amp;gt; categories relations (so we can find the articles from a specific category):&lt;/span&gt;
+&lt;pre class="code"&gt;http://downloads.dbpedia.org/3.6/en/article_categories_en.nt.bz2 (115mb)&lt;/pre&gt;
+&lt;span&gt;Contains relations between categories and subcategories:&lt;/span&gt;
+&lt;pre class="code"&gt;http://downloads.dbpedia.org/3.6/en/skos_categories_en.nt.bz2 (18mb)&lt;/pre&gt;
+Great! We have the data. It's time to filter out that data and generate a .mobi file.&lt;/p&gt;
+&lt;p&gt;Again.. Problems.. Kindle really sucks at this because it uses the proprietary .mobi format which doesn't have good open converters which I could use. So I used the mobigen.exe provided by &lt;a href="http://www.mobipocket.com/dev/"&gt;http://www.mobipocket.com/dev/&lt;/a&gt; that allows you to create mobi dictionaries from an .opf file. Ok so now I need and opf file? That sucks. Fortunately this guy: Klokan Petr Přidal (www.klokan.cz) created this script: &lt;a href="https://github.com/humanfromearth/wikimobi/blob/master/tab2opf.py"&gt;tab2opf.py&lt;/a&gt;. Which converts tab separated files into opf dictionaries.&lt;/p&gt;
+&lt;p&gt;Ok so in the end I needed this:
+&lt;ol&gt;
+    &lt;li&gt;Create a tab separted file: [term]\t[definition] -&amp;gt; out.tab&lt;/li&gt;
+    &lt;li&gt;Convert out.tab -&amp;gt; out.opf&lt;/li&gt;
+    &lt;li&gt;Convert out.opf -&amp;gt; dicitionary.mobi&lt;/li&gt;
+&lt;/ol&gt;
+Easy right? So after writing the stuff I described above we use the tool (wikimobi.py):
+&lt;pre class="code"&gt;python wikimobi.py -nt path_to_nt_files_dir/ -o output_file -c Category -l levels&lt;/pre&gt;
+For physics it would something like:
+&lt;pre class="code"&gt;python wikimobi.py -nt path_to_nt_files_dir/ -o physics -c Physics -l 3&lt;/pre&gt;
+The level options goes down 3 levels in the category hierarchy so we don't end up in &lt;a href="http://xkcd.com/903/"&gt;Philosophy&lt;/a&gt;:&lt;/p&gt;
+&lt;p&gt;&lt;img title="Wikipedia trivia: if you take any article, click on the first link in the article text not in parentheses or italics, and then repeat, you will eventually end up at &amp;quot;Philosophy&amp;quot;." src="http://imgs.xkcd.com/comics/extended_mind.png" alt="Extended Mind" /&gt;&lt;/p&gt;
+&lt;p&gt;If you have an idea on how to perform the filtering of articles based on their categories so we don't get a lot of unrelated stuff I'd be interested to hear it.&lt;/p&gt;
+&lt;p&gt;Have fun!
+&lt;h3 id="update-download"&gt;Update:&lt;/h3&gt;
+&lt;h4&gt;&lt;span class="Apple-style-span" style="font-weight: normal;"&gt;On &lt;strong&gt;stehk's &lt;/strong&gt;request I've generated a few dictionaries:&lt;/span&gt;&lt;/h4&gt;
+&lt;ol&gt;
+    &lt;li&gt;Physics: &lt;a href="http://blog.hiresasha.net/wp-content/uploads/dictionaries/physics.mobi"&gt;http://blog.hiresasha.net/wp-content/uploads/dictionaries/physics.mobi&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;Chemistry: &lt;a href="http://blog.hiresasha.net/wp-content/uploads/dictionaries/chemistry.mobi"&gt;http://blog.hiresasha.net/wp-content/uploads/dictionaries/chemistry.mobi&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;Mathematics: &lt;a href="http://blog.hiresasha.net/wp-content/uploads/dictionaries/math.mobi"&gt;http://blog.hiresasha.net/wp-content/uploads/dictionaries/math.mobi&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;Biology: &lt;a href="http://blog.hiresasha.net/wp-content/uploads/dictionaries/biology.mobi"&gt;http://blog.hiresasha.net/wp-content/uploads/dictionaries/biology.mobi&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;Philosophy: &lt;a href="http://blog.hiresasha.net/wp-content/uploads/dictionaries/philosophy.mobi"&gt;http://blog.hiresasha.net/wp-content/uploads/dictionaries/philosophy.mobi&lt;/a&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;div&gt;&lt;strong&gt;Note: &lt;/strong&gt;The dictionaries are usable but there are still some unicode and metadata problems which I wasn't able to solve. Hopefully someone can help me to solve those.&lt;/div&gt;&lt;/p&gt;</summary><category term="wikipedia"></category><category term="kindle"></category><category term="python"></category><category term="mobi"></category><category term="dictionaries"></category></entry><entry><title>Go and Python</title><link href="http://blog.hiresasha.net/go-and-python.html" rel="alternate"></link><updated>2011-08-04T18:14:00+02:00</updated><author><name>Alex Plugaru</name></author><id>tag:blog.hiresasha.net,2011-08-04:go-and-python.html</id><summary type="html">&lt;p&gt;I see a lot of talk nowadays about &lt;a href="http://golang.org/"&gt;Go&lt;/a&gt;&lt;a href="http://golang.org/"&gt;lang&lt;/a&gt;. It's fresh, it's shiny, not too many features, documented, statically typed, garbage collected, parallel, python zen inspired sweet candy.&lt;/p&gt;
+&lt;p style="margin-bottom: 0in;"&gt;I'm a python addict, I admit it. Looking at poor people from 3rd world of computer languages with their cluttered syntaxes and semicolons and other useless unintelligible syntactic voodoo makes me feel really good. Too good actually. When I need to do something in some other language I feel sick sometimes. I'm serious. I have a familiar feeling with the process called: eating spinach. I can eat it, don't get me wrong here, but I don't enjoy it. Just moving my maxilla to get the job done. My brain got comfortable with python. My synapses are now irreversibly fused towards python and python ways of doing stuff.&lt;/p&gt;
+&lt;p style="margin-bottom: 0in;"&gt;So what about Go? Well.. it turns out Go is remarkably similar to python in many ways. In my mind it's like a python for the system-programming/statically-typed/compiled/crazy-fast world. For me this language is good news. Because sometimes python is too slow and I don't want to get dirty with C. I want a language that actually has a usable standard library similar to python's standard library that allows me to get low level enought without sacrificing my time and patience. I have a specific example I played with recently which I intend to bring forward for comparison of these two amazing languages.&lt;/p&gt;
+&lt;p style="margin-bottom: 0in;"&gt;I needed a &lt;a href="http://en.wikipedia.org/wiki/Boyer%E2%80%93Moore%E2%80%93Horspool_algorithm"&gt;Boyer-Moore-Horspool&lt;/a&gt; search algorithm which I stole from this &lt;a href="http://code.activestate.com/recipes/117223-boyer-moore-horspool-string-searching/"&gt;recipe&lt;/a&gt; here. My example is a little bit modified so that it does not stop on the first search result, but continues until is done counting the number of occurences of a 'word' in a string:&lt;/p&gt;
+&lt;p style="margin-bottom: 0in;"&gt;&lt;strong&gt;Attention! &lt;/strong&gt;I don't want to compare the speed of the two languages. It would be stupid. Go is faster. What I want to do instead is to compare the code complexity/readability for both. &lt;em&gt;I believe that clean-slow code is bettter than ugly-fast code&lt;/em&gt;. I want to see if my code is still readable in Go and if it's close to the python example. Maybe even better for this particular example. Who knows?&lt;/p&gt;
+&lt;p style="margin-bottom: 0in;"&gt;[gist id=1049183]&lt;/p&gt;
+The above example is not equivalent to python's: str.count because it does more checking. As you can see there are a few optimisations here and there, but overall the code looks pretty clean. This code has a big dissadvantage. It's called speed. Compared to the find function in cpython (which is really fast - I think it uses the same algorithm: bmh) it's really slow. I tested this in &lt;a href="http://pypy.org/"&gt;pypy&lt;/a&gt; as well, it is very slow. Like 10 times slower then CPython for this example. Is this normal? Am I wrong?&lt;/p&gt;
+&lt;p&gt;Anyway.. here is the same written in Go:&lt;/p&gt;
+&lt;p&gt;[gist id=1050644]&lt;/p&gt;
+&lt;p&gt;Now I don't know about you, but this looks good to me. I mean just visually compare the python example with this one. I looks similar right?&lt;/p&gt;
+&lt;p&gt;This example is bad. It may even say: "Go is better".. It's not true. This example surelly does not demostrate all the benefits that you get from Go or Python.. it's a simple example.. one of many.. and should be treated as such.&lt;/p&gt;
+&lt;p&gt;Now here are a few rants about Go:
+&lt;ul&gt;
+    &lt;li&gt;Api stability. Go guys please don't change the API's so often, it makes people nervous. It makes serious comercial development problematic. I know it's a new language and a lot of things are changing which is normal, but keep in mind that people like me who need to get their shit done fast will think twice before building a real world product without a api 'stability'.&lt;/li&gt;
+    &lt;li&gt;Debugger - I hear there is one in development right now. No language is worth much without a usable debugger. I'm sorry.. I'm just too lazy to look at my code to figure out what's the problem. I want a usable debugger right now.&lt;/li&gt;
+    &lt;li&gt;Too little zen of python in some third party libraries. import this. Please...&lt;/li&gt;
+&lt;/ul&gt;
+I will say that Go certainly sparked my interest. It's a cool language. It's a keeper. I will try to find a project to actually do something practical with it.&lt;/p&gt;
+&lt;p&gt;Until then gooo!&lt;/p&gt;
+&lt;p&gt;A more complete example of Go (with tests): &lt;a href="https://github.com/humanfromearth/goooo"&gt;https://github.com/humanfromearth/goooo&lt;/a&gt;&lt;/p&gt;</summary><category term="python"></category><category term="golang"></category><category term="coding"></category></entry><entry><title>An introduction</title><link href="http://blog.hiresasha.net/an-introduction.html" rel="alternate"></link><updated>2011-08-04T18:09:00+02:00</updated><author><name>Alex Plugaru</name></author><id>tag:blog.hiresasha.net,2011-08-04:an-introduction.html</id><summary type="html">&lt;p&gt;I was thinking of starting a blog about my coding experiences many times. Almost all times when I get this idea my usual reply is: "What? There are so many out there I'll hardly make a contribution!". Turns out I was wrong in about this. I thought about writing for others rather than myself.&lt;/p&gt;
+&lt;p&gt;That changed and here is why.&lt;/p&gt;
+&lt;p&gt;There are many good reasons to start a blog: to show of the cool stuff you're doing, to remember stuff, to get better at explaining complicated things to a critical audience and probably others. By writing about a specific experience you tend to organize your thoughts in a sistematic way which will be dumped in a nice and clean blog post that can be digested by some people that never have time to read your posts.&lt;/p&gt;
+&lt;p&gt;All this 'wisdom' maybe common knowledge for others, but for me this is new.&lt;/p&gt;
+&lt;p&gt;Most of my posts will be related to Python coding encounters the new Go programming language adventures and C. I'm a web coder so most of the things about these languages and libraries related to them will be revolving around the web technologies.&lt;/p&gt;
+&lt;p&gt;So here is to a new adventure.&lt;/p&gt;</summary><category term="general"></category></entry></feed>
